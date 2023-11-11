@@ -1,0 +1,61 @@
+plugins {
+    id("java")
+    id 'com.github.johnrengelman.shadow' version '8.1.1' // Replace with the latest version
+    id 'edu.sc.seis.launch4j' version '2.5.4' // Use the latest version available
+}
+
+group = "com.absolutephoenix.dbvopackbuilder"
+version = "1.0-SNAPSHOT"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("com.github.weisj:darklaf-core:3.0.2")
+    implementation("net.andrewcpu:elevenlabs-api:2.1")
+    implementation 'com.fasterxml.jackson:jackson-bom:2.16.0-rc1'
+    implementation 'com.github.kokorin.jaffree:jaffree:2023.09.10'
+
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    archiveVersion.set('')
+    // Additional configuration as needed
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.absolutephoenix.dbvopackbuilder.DBVOPackBuilder'
+        )
+    }
+}
+
+task jpackage(type: Exec) {
+    doFirst {
+        exec {
+            executable 'jpackage'
+            args = ['--input', 'build/libs',
+                    '--name', 'YourAppName',
+                    '--main-jar', 'yourapp.jar',
+                    '--main-class', 'com.yourpackage.MainClass',
+                    '--type', 'exe']
+        }
+    }
+}
+
+launch4j {
+    mainClassName = 'com.absolutephoenix.dbvopackbuilder.DBVOPackBuilder'
+    outfile = 'DBVOPackBuilder.exe'
+    jar = shadowJar.archivePath
+    bundledJrePath = "bin/jre"
+    bundledJre64Bit = true
+
+    // For additional configuration options, see the Launch4j and plugin documentation
+    // Example: icon, vm options, application version, etc.
+}
+tasks.test {
+    useJUnitPlatform()
+}
