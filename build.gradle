@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.absolutephoenix.dbvopackbuilder"
-version = "1.0-SNAPSHOT"
+version = "0.1.0"
 
 repositories {
     mavenCentral()
@@ -51,8 +51,8 @@ launch4j {
     outfile = 'DBVOPackBuilder.exe'
     jar = shadowJar.archivePath
 
-    bundledJrePath = "bin/jre"
-    bundledJre64Bit = true
+//    bundledJrePath = "bin/jre"
+//    bundledJre64Bit = true
 
     // For additional configuration options, see the Launch4j and plugin documentation
     // Example: icon, vm options, application version, etc.

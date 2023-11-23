@@ -72,7 +72,7 @@ public class MainWindow extends JFrame implements ComponentListener {
             MainWindow.instance.setTitle("DBVO Pack Builder - " + GlobalVariables.CharacterCount+ "/" + GlobalVariables.subscription.getCharacterLimit());
         }catch (NullPointerException ignore){
         }
-        LogHelper.notice("DBVO Pack Maker Version: 0.0.1");
+        LogHelper.notice("DBVO Pack Maker Version: 0.1.0");
         LogHelper.notice("Make sure your settings are right before continuing,");
         LogHelper.notice("Character counts are an approximation before parsing. Actual count will most likely be lower.");
         packGeneratorPanel.loadTableData();
