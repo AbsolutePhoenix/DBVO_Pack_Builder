@@ -1,5 +1,7 @@
 package com.absolutephoenix.dbvopackbuilder.utils;
 
+import com.absolutephoenix.dbvopackbuilder.config.ConfigManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -131,7 +133,12 @@ public class AudioManipulation {
             // Generate the output file name and path in the temp directory
 
             // Construct the command
-            ProcessBuilder processBuilder = new ProcessBuilder(encoderPath, fuzPath.toString(), xmwPath.toString(), lipPath.toString());
+            ProcessBuilder processBuilder;
+            if(ConfigManager.getSetting().getPackGenerateLip().equals("true")) {
+                processBuilder = new ProcessBuilder(encoderPath, fuzPath.toString(), xmwPath.toString(), lipPath.toString());
+            }else{
+                processBuilder = new ProcessBuilder(encoderPath, fuzPath.toString(), xmwPath.toString(), "-nolip");
+            }
             processBuilder.redirectErrorStream(true); // Redirect error stream to the output stream
 
             try {

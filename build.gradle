@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     implementation("com.github.weisj:darklaf-core:3.0.2")
-    implementation("net.andrewcpu:elevenlabs-api:2.1")
+    implementation("net.andrewcpu:elevenlabs-api:2.7.2")
     implementation 'com.fasterxml.jackson:jackson-bom:2.16.0-rc1'
     implementation 'com.github.kokorin.jaffree:jaffree:2023.09.10'
 
@@ -50,6 +50,7 @@ launch4j {
     mainClassName = 'com.absolutephoenix.dbvopackbuilder.DBVOPackBuilder'
     outfile = 'DBVOPackBuilder.exe'
     jar = shadowJar.archivePath
+
     bundledJrePath = "bin/jre"
     bundledJre64Bit = true
 

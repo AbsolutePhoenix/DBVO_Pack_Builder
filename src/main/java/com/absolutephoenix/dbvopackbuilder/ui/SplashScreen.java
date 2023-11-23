@@ -40,12 +40,16 @@ public class SplashScreen extends JWindow {
         setVisible(true);
 
         // Create a timer to hide the splash screen after a certain duration
-        Timer timer = new Timer(duration * 1000, e -> {
-            dispose(); // Dispose of the splash screen window
-            // After the splash screen is disposed, make the main application window visible
-                new MainWindow();
-        });
-        timer.setRepeats(false); // Ensure the timer only runs once
-        timer.start(); // Start the timer
+//        Timer timer = new Timer(duration * 1000, e -> {
+//            dispose(); // Dispose of the splash screen window
+//            // After the splash screen is disposed, make the main application window visible
+//                new MainWindow();
+//        });
+//        timer.setRepeats(false); // Ensure the timer only runs once
+//        timer.start(); // Start the timer
+    }
+
+    public void close(){
+        dispose();
     }
 }

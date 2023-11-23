@@ -11,8 +11,7 @@ import net.andrewcpu.elevenlabs.model.voice.VoiceSettings;
 import java.io.*;
 
 public class ElevenLabsFileHandling {
-    public static void saveStreamAsMp3(Voice voice, double stability, double similarity, String voiceLine,  String fileName) {
-        // Define the path to the temp folder inside the working directory
+    public static void saveStreamAsMp3(Voice voice, double stability, double similarity, double style, String voiceLine,  String fileName) {
         File mp3Dir = new File("./staging/mp3/");
 
         // Ensure the temp directory exists
@@ -26,7 +25,7 @@ public class ElevenLabsFileHandling {
         }else {
             LogHelper.greenInfo("GENERATING: " + voiceLine);
 
-            InputStream stream = voice.generateStream( voiceLine, ConfigManager.getSetting().getElevenLabsVoiceModelID(), new VoiceSettings(stability, similarity));
+            InputStream stream = voice.generateStream( voiceLine, ConfigManager.getSetting().getElevenLabsVoiceModelID(), new VoiceSettings(stability, similarity, style, false));
             try {
                 GlobalVariables.CharacterCount = GlobalVariables.CharacterCount + voiceLine.length();
                 MainWindow.instance.setTitle("DBVO Pack Builder - " + GlobalVariables.CharacterCount + "/" + GlobalVariables.subscription.getCharacterLimit());

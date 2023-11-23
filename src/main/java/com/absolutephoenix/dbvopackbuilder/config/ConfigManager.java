@@ -142,6 +142,15 @@ public class ConfigManager {
         properties.setProperty("ElevenLabsClarity", clarity + "");
     }
 
+    public int getElevenLabsStyle() {
+        return Integer.parseInt(properties.getProperty("ElevenLabsStyle", "0"));
+    }
+
+    public void setElevenLabsStyle(int style) {
+        properties.setProperty("ElevenLabsStyle", style + "");
+    }
+
+
     public String getWriteAliasData() {
         return properties.getProperty("SaveAlias", "false");
     }
@@ -190,6 +199,14 @@ public class ConfigManager {
         properties.setProperty("PackVoiceName", packVoiceName);
     }
 
+    public String getPackGenerateLip() {
+        return properties.getProperty("PackGenerateLip", "true");
+    }
+
+    public void setPackGenerateLip(String packGenerateLip) {
+        properties.setProperty("PackGenerateLip", packGenerateLip);
+    }
+
     public String getPackBuildToBSA() {
         return properties.getProperty("PackBuildToBSA", "false");
     }
@@ -230,4 +247,12 @@ public class ConfigManager {
     public void setFomodNexusURL(String fomodNexusURL) {
         properties.setProperty("FomodNexusURL", fomodNexusURL);
     }
+
+    public String getCurrentTheme() {
+        return properties.getProperty("CurrentTheme", "OneDarkTheme");
+    }
+    public void setCurrentTheme(String currentTheme) {
+        properties.setProperty("CurrentTheme", currentTheme);
+    }
+
 }

@@ -41,6 +41,9 @@ public class SettingsPanel extends JPanel implements ComponentListener {
     private JSlider elevenlabsStability = new JSlider(0, 100, 50);
     private JLabel elevenlabsClarityLabel = new JLabel("Voice Clarity:");
     private JSlider elevenlabsClarity = new JSlider(0, 100, 50);
+    private JLabel elevenlabsStyleLabel = new JLabel("Voice Emotion (Experimental):");
+    private JSlider elevenlabsStyle = new JSlider(0, 100, 50);
+
     public JButton elevenlabsSave = new JButton("SAVE");
 
     // Pack settings components
@@ -51,6 +54,7 @@ public class SettingsPanel extends JPanel implements ComponentListener {
     private JTextField PackID = new JTextField();
     private JLabel PackVoiceNameLabel = new JLabel("Voice Name:");
     private JTextField PackVoiceName = new JTextField();
+    private JCheckBox useLip = new JCheckBox("Generate Lip Data", true);
     private JCheckBox BuildToBSA = new JCheckBox("Build To BSA", false);
     public JButton PackSave = new JButton("SAVE");
 
@@ -65,6 +69,10 @@ public class SettingsPanel extends JPanel implements ComponentListener {
     private JLabel fomodNexusPageLabel = new JLabel("Nexus URL:");
     private JTextField fomodNexusPage = new JTextField();
     public JButton fomodSave = new JButton("SAVE");
+
+    private JScrollPane elevenLabsScrollPane;
+    private JScrollPane packScrollPane;
+    private JScrollPane fomodScrollPane;
 
     /**
      * Constructs a SettingsPanel object and initializes the UI components and their layout.
@@ -89,7 +97,6 @@ public class SettingsPanel extends JPanel implements ComponentListener {
     public void elevenLabsSetup() {
         // Set layout for the ElevenLabs settings panel and create a titled border.
         elevenLabsPanel.setLayout(new GridBagLayout());
-        elevenLabsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(0), "ElevenLabs Settings"));
 
         // GridBag constraints for component layout.
         GridBagConstraints gbc = new GridBagConstraints();
@@ -112,10 +119,12 @@ public class SettingsPanel extends JPanel implements ComponentListener {
         elevenLabsPanel.add(elevenlabsStabilityLabel, gbc);
         elevenlabsStability.setEnabled(false); // Disabled initially, enabled based on subscription status.
         elevenLabsPanel.add(elevenlabsStability, gbc);
-        elevenlabsClarity.setEnabled(false); // Disabled initially, enabled based on subscription status.
         elevenLabsPanel.add(elevenlabsClarityLabel, gbc);
+        elevenlabsClarity.setEnabled(false); // Disabled initially, enabled based on subscription status.
         elevenLabsPanel.add(elevenlabsClarity, gbc);
-        elevenLabsPanel.add(elevenlabsSave, gbc);
+        elevenLabsPanel.add(elevenlabsStyleLabel, gbc);
+        elevenlabsStyle.setEnabled(false); // Disabled initially, enabled based on subscription status.
+        elevenLabsPanel.add(elevenlabsStyle, gbc);
 
         // Load saved ElevenLabs API key from ConfigManager and set it in the API field.
         elevenLabsAPIField.setText(ConfigManager.getSetting().getElevenLabsAPIKey());
@@ -124,23 +133,23 @@ public class SettingsPanel extends JPanel implements ComponentListener {
         ElevenLabs.setApiKey(new String(elevenLabsAPIField.getPassword()));
 
         // Check the subscription status and enable components accordingly.
-        if(ElevenLabs.getSubscription().getTier() != null) {
-            GlobalVariables.subscription = ElevenLabs.getSubscription();
+        if(ElevenLabs.getUserAPI().getSubscription().getTier() != null) {
+            GlobalVariables.subscription = ElevenLabs.getUserAPI().getSubscription();
 
             // Populate the voice JComboBox with available voices from ElevenLabs.
             List<String> voices = new ArrayList<>();
-            for(Voice voice : ElevenLabs.getVoices()) {
+            for(Voice voice : ElevenLabs.getVoiceAPI().getVoices()) {
                 voices.add(voice.getName());
             }
             elevenLabsVoice.setModel(new DefaultComboBoxModel<>(voices.toArray(new String[0])));
 
             List<String> models = new ArrayList<>();
-            for(GenerationTypeModel model :  ElevenLabs.getAvailableModels()){
+            for(GenerationTypeModel model :  ElevenLabs.getModelsAPI().getAvailableModels()){
                 models.add(model.getName());
             }
             elevenLabsVoiceModel.setModel(new DefaultComboBoxModel<>(models.toArray(new String[0])));
 
-            if(ElevenLabs.getSubscription().getTier() != null) {
+            if(ElevenLabs.getUserAPI().getSubscription().getTier() != null) {
                 elevenLabsVoice.setEnabled(true);
                 elevenLabsVoice.setSelectedItem(ConfigManager.getSetting().getElevenLabsVoice());
                 elevenLabsVoiceModel.setEnabled(true);
@@ -149,13 +158,22 @@ public class SettingsPanel extends JPanel implements ComponentListener {
                 elevenlabsStability.setValue(ConfigManager.getSetting().getElevenLabsStability());
                 elevenlabsClarity.setEnabled(true);
                 elevenlabsClarity.setValue(ConfigManager.getSetting().getElevenLabsClarity());
+                elevenlabsStyle.setEnabled(true);
+                elevenlabsStyle.setValue(ConfigManager.getSetting().getElevenLabsStyle());
             }
             elevenlabsStabilityLabel.setText("Voice Stabilit: " + elevenlabsStability.getValue());
             elevenlabsClarityLabel.setText("Voice Clarity: " + elevenlabsClarity.getValue());
+            elevenlabsStyleLabel.setText("Voice Emotion (Experimental): " + elevenlabsStyle.getValue());
+
         }
 
         // Add the ElevenLabs settings panel to the parent container.
-        add(elevenLabsPanel);
+        elevenLabsScrollPane = new JScrollPane(elevenLabsPanel);
+        elevenLabsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        elevenLabsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        elevenLabsScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(0), "ElevenLabs Settings"));
+        add(elevenLabsScrollPane);
+        add(elevenlabsSave);
     }
 
     /**
@@ -167,7 +185,6 @@ public class SettingsPanel extends JPanel implements ComponentListener {
     public void packSetup() {
         // Configure the layout and border for the pack settings panel.
         PackPanel.setLayout(new GridBagLayout());
-        PackPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(0), "Pack Settings"));
 
         // Create and configure GridBagConstraints for component placement.
         GridBagConstraints gbc = new GridBagConstraints();
@@ -191,14 +208,11 @@ public class SettingsPanel extends JPanel implements ComponentListener {
         PackPanel.add(PackVoiceName, gbc);
 
         // Add the build to BSA checkbox to the panel.
+        PackPanel.add(useLip, gbc);
         PackPanel.add(BuildToBSA, gbc);
 
         PackPanel.add(new JLabel(" "), gbc);
         PackPanel.add(new JLabel(" "), gbc);
-        PackPanel.add(new JLabel(" "), gbc);
-
-        // Add the save button to the panel.
-        PackPanel.add(PackSave, gbc);
 
         // Set the text fields with the current configuration settings.
         PackName.setText(ConfigManager.getSetting().getPackName());
@@ -209,9 +223,17 @@ public class SettingsPanel extends JPanel implements ComponentListener {
         if(ConfigManager.getSetting().getPackBuildToBSA().equals("true")) {
             BuildToBSA.setSelected(true);
         }
+        if(ConfigManager.getSetting().getPackGenerateLip().equals("true")) {
+            useLip.setSelected(true);
+        }
 
         // Add the complete pack settings panel to the parent container.
-        add(PackPanel);
+        packScrollPane = new JScrollPane(PackPanel);
+        packScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        packScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        packScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(0), "Pack Settings"));
+        add(packScrollPane);
+        add(PackSave);
     }
 
     /**
@@ -223,7 +245,6 @@ public class SettingsPanel extends JPanel implements ComponentListener {
     public void fomodSetup() {
         // Set the panel layout and define the border with a title.
         fomodPanel.setLayout(new GridBagLayout());
-        fomodPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(0), "FOMOD Settings"));
 
         // Initialize GridBagConstraints for component placement within the panel.
         GridBagConstraints gbc = new GridBagConstraints();
@@ -235,28 +256,30 @@ public class SettingsPanel extends JPanel implements ComponentListener {
         gbc.insets = new Insets(5, 5, 5, 5); // Set padding around components.
 
         // Add the mod name label and text field to the panel.
-        fomodModName.setEnabled(false);
-        fomodPanel.add(fomodModNameLabel, gbc);
-        fomodPanel.add(fomodModName, gbc);
+//        fomodModName.setEnabled(false);
+//        fomodPanel.add(fomodModNameLabel, gbc);
+//        fomodPanel.add(fomodModName, gbc);
+//
+//        // Add the mod author label and text field to the panel.
+//        fomodModAuthor.setEnabled(false);
+//        fomodPanel.add(fomodModAuthorLabel, gbc);
+//        fomodPanel.add(fomodModAuthor, gbc);
+//
+//        // Add the mod version label and text field to the panel.
+//        fomodModVersion.setEnabled(false);
+//        fomodPanel.add(fomodModVersionLabel, gbc);
+//        fomodPanel.add(fomodModVersion, gbc);
+//
+//        // Add the Nexus page URL label and text field to the panel.
+//        fomodNexusPage.setEnabled(false);
+//        fomodPanel.add(fomodNexusPageLabel, gbc);
+//        fomodPanel.add(fomodNexusPage, gbc);
+        Font font = new Font("IMPACT", Font.PLAIN, 28);
+        JLabel comingSoon = new JLabel("FOMOD GENERATION COMING SOON");
+        comingSoon.setFont(font);
+        fomodPanel.add(comingSoon, gbc);
+//        fomodPanel.add(new JLabel(" "), gbc);
 
-        // Add the mod author label and text field to the panel.
-        fomodModAuthor.setEnabled(false);
-        fomodPanel.add(fomodModAuthorLabel, gbc);
-        fomodPanel.add(fomodModAuthor, gbc);
-
-        // Add the mod version label and text field to the panel.
-        fomodModVersion.setEnabled(false);
-        fomodPanel.add(fomodModVersionLabel, gbc);
-        fomodPanel.add(fomodModVersion, gbc);
-
-        // Add the Nexus page URL label and text field to the panel.
-        fomodNexusPage.setEnabled(false);
-        fomodPanel.add(fomodNexusPageLabel, gbc);
-        fomodPanel.add(fomodNexusPage, gbc);
-
-        // Add the save button to the panel.
-        fomodSave.setEnabled(false);
-        fomodPanel.add(fomodSave, gbc);
 
         // Populate text fields with saved settings from the configuration manager.
         fomodModName.setText(ConfigManager.getSetting().getFomodModName());
@@ -265,7 +288,14 @@ public class SettingsPanel extends JPanel implements ComponentListener {
         fomodNexusPage.setText(ConfigManager.getSetting().getFomodNexusURL());
 
         // Add the complete FOMOD settings panel to the parent container.
-        add(fomodPanel);
+        fomodScrollPane = new JScrollPane(fomodPanel);
+        fomodScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        fomodScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        fomodScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(0), "FOMOD Settings"));
+
+        add(fomodScrollPane);
+        fomodSave.setEnabled(false);
+        add(fomodSave);
     }
 
 
@@ -286,18 +316,20 @@ public class SettingsPanel extends JPanel implements ComponentListener {
             }catch (NullPointerException a){
                 ConfigManager.getSetting().setElevenLabsVoiceModel("");
             }
-            for(Voice voice : ElevenLabs.getVoices()) {
+            for(Voice voice : ElevenLabs.getVoiceAPI().getVoices()) {
                 if(voice.getName().equals(Objects.requireNonNull(elevenLabsVoice.getSelectedItem()).toString()))
                     ConfigManager.getSetting().setElevenLabsVoiceID(voice.getVoiceId());
             }
 
-            for(GenerationTypeModel model : ElevenLabs.getAvailableModels()) {
+            for(GenerationTypeModel model : ElevenLabs.getModelsAPI().getAvailableModels()) {
                 if(model.getName().equals(Objects.requireNonNull(elevenLabsVoiceModel.getSelectedItem()).toString()))
                     ConfigManager.getSetting().setElevenLabsVoiceModelID(model.getModelId());
             }
 
             ConfigManager.getSetting().setElevenLabsStability(elevenlabsStability.getValue());
             ConfigManager.getSetting().setElevenLabsClarity(elevenlabsClarity.getValue());
+            ConfigManager.getSetting().setElevenLabsStyle(elevenlabsStyle.getValue());
+
             ConfigManager.getSetting().saveProperties(false);
             LogHelper.info("ElevenLabs Settings have been saved.");
         });
@@ -317,16 +349,16 @@ public class SettingsPanel extends JPanel implements ComponentListener {
             public void handleChanges(){
                 if(new String(elevenLabsAPIField.getPassword()).length() == 32) {
                     ElevenLabs.setApiKey(new String(elevenLabsAPIField.getPassword()));
-                    if (ElevenLabs.getSubscription().getTier() != null) {
-                        GlobalVariables.subscription = ElevenLabs.getSubscription();
+                    if (ElevenLabs.getUserAPI().getSubscription().getTier() != null) {
+                        GlobalVariables.subscription = ElevenLabs.getUserAPI().getSubscription();
 
                         List<String> voices = new ArrayList<String>();
-                        for (Voice voice : ElevenLabs.getVoices()) {
+                        for (Voice voice : ElevenLabs.getVoiceAPI().getVoices()) {
                             voices.add(voice.getName());
                         }
 
                         List<String> models = new ArrayList<String>();
-                        for (GenerationTypeModel model : ElevenLabs.getAvailableModels()) {
+                        for (GenerationTypeModel model : ElevenLabs.getModelsAPI().getAvailableModels()) {
                             models.add(model.getName());
                         }
                         elevenLabsVoice.setEnabled(true);
@@ -335,6 +367,7 @@ public class SettingsPanel extends JPanel implements ComponentListener {
                         elevenLabsVoiceModel.setModel(new DefaultComboBoxModel<>(models.toArray(new String[0])));
                         elevenlabsStability.setEnabled(true);
                         elevenlabsClarity.setEnabled(true);
+                        elevenlabsStyle.setEnabled(true);
                         LogHelper.info("Found Eleven Labs Subscription. Enabling Options");
 
                         try {
@@ -350,6 +383,8 @@ public class SettingsPanel extends JPanel implements ComponentListener {
                         elevenLabsVoiceModel.setModel(new DefaultComboBoxModel<>());
                         elevenlabsStability.setEnabled(false);
                         elevenlabsStability.setValue(50);
+                        elevenlabsStyle.setEnabled(false);
+                        elevenlabsStyle.setValue(0);
                         elevenlabsClarity.setEnabled(false);
                         elevenlabsClarity.setValue(50);
                         MainWindow.instance.setTitle("DBVO Pack Builder");
@@ -361,6 +396,8 @@ public class SettingsPanel extends JPanel implements ComponentListener {
                     elevenLabsVoiceModel.setModel(new DefaultComboBoxModel<>());
                     elevenlabsStability.setEnabled(false);
                     elevenlabsStability.setValue(50);
+                    elevenlabsStyle.setEnabled(false);
+                    elevenlabsStyle.setValue(0);
                     elevenlabsClarity.setEnabled(false);
                     elevenlabsClarity.setValue(50);
                     MainWindow.instance.setTitle("DBVO Pack Builder");
@@ -372,6 +409,8 @@ public class SettingsPanel extends JPanel implements ComponentListener {
             ConfigManager.getSetting().setPackName(PackName.getText());
             ConfigManager.getSetting().setPackID(PackID.getText());
             ConfigManager.getSetting().setPackVoiceName(PackVoiceName.getText());
+            if(useLip.isSelected()) ConfigManager.getSetting().setPackGenerateLip("true");
+            else ConfigManager.getSetting().setPackGenerateLip("false");
             if(BuildToBSA.isSelected()) ConfigManager.getSetting().setPackBuildToBSA("true");
             else ConfigManager.getSetting().setPackBuildToBSA("false");
             ConfigManager.getSetting().saveProperties(false);
@@ -396,13 +435,21 @@ public class SettingsPanel extends JPanel implements ComponentListener {
             elevenlabsClarityLabel.setText("Voice Stability: " + elevenlabsClarity.getValue());
         });
 
+        elevenlabsStyle.addChangeListener(e -> {
+            elevenlabsStyleLabel.setText("Voice Emotion (Experimental): " + elevenlabsStyle.getValue());
+        });
+
     }
 
     @Override
     public void componentResized(ComponentEvent e) {
-        elevenLabsPanel.setBounds(10, 10, getWidth() / 3 - 20, getHeight() - 20);
-        PackPanel.setBounds(elevenLabsPanel.getX() + elevenLabsPanel.getWidth() + 20, 10, getWidth() / 3 - 20, getHeight() - 20);
-        fomodPanel.setBounds(PackPanel.getX() + PackPanel.getWidth() + 20, 10, getWidth() / 3 - 20, getHeight() - 20);
+        elevenLabsScrollPane.setBounds(10, 10, getWidth() / 3 - 20, getHeight() - 60);
+        elevenlabsSave.setBounds(elevenLabsScrollPane.getX(), elevenLabsScrollPane.getY() + elevenLabsScrollPane.getHeight() + 10, elevenLabsScrollPane.getWidth(), 25);
+        packScrollPane.setBounds(elevenLabsScrollPane.getX() + elevenLabsScrollPane.getWidth() + 20, 10, getWidth() / 3 - 20, getHeight() - 60);
+        PackSave.setBounds(packScrollPane.getX(), packScrollPane.getY() + packScrollPane.getHeight() + 10, packScrollPane.getWidth(), 25);
+        fomodScrollPane.setBounds(packScrollPane.getX() + packScrollPane.getWidth() + 20, 10, getWidth() / 3 - 20, getHeight() - 60);
+        fomodSave.setBounds(fomodScrollPane.getX(), fomodScrollPane.getY() + fomodScrollPane.getHeight() + 10, fomodScrollPane.getWidth(), 25);
+
     }
 
     @Override
