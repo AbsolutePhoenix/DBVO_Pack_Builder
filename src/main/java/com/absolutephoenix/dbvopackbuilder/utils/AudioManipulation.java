@@ -9,154 +9,101 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class AudioManipulation {
-    public static void convertMP3ToWAV(String fileName) {
-        String ffmpegExecutablePath = new File ("bin/ffmpeg").getAbsolutePath(); // assuming ffmpeg binary is in the working directory
-        File mp3Dir = new File("staging/mp3/").getAbsoluteFile();
-        Path mp3FilePath = new File(mp3Dir, fileName + ".mp3").toPath();
-        // Define the path to the temp folder inside the working directory
-        File wavDir = new File("staging/wav/").getAbsoluteFile();
-        Path wavePath = new File(wavDir, fileName + ".wav").toPath();
 
-        if(!wavePath.toFile().exists()) {
-            LogHelper.grayInfo("CONVERTING TO WAV");
-            if(!wavDir.exists())
-                wavDir.mkdirs();
-            // Check if MP3 file exists
-            if (!Files.exists(mp3FilePath)) {
-                System.out.println("MP3 file does not exist: " + mp3FilePath);
-                return;
-            }
-
-            // Build the FFmpeg command
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                    ffmpegExecutablePath,
-                    "-i", mp3FilePath.toString(),
-                    "-acodec", "pcm_s16le",
-                    "-ar", "44100",
-                    "-ac", "1",
-                    wavePath.toString()
-            );
-
-            try {
-                Process process = processBuilder.start();
-                int exitCode = process.waitFor();
-                if (exitCode != 0) {
-                    System.out.println("Conversion failed with exit code: " + exitCode);
-                }
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+    private static void createDirectoryIfNotExists(String directoryPath) {
+        LogHelper.debug("Checking directory: " + directoryPath);
+        File dir = new File(directoryPath);
+        if (!dir.exists()) {
+            LogHelper.verbose("Creating directory: " + directoryPath);
+            if (!dir.mkdirs()) {
+                LogHelper.error("Could not create directory: " + directoryPath);
             }
         }
     }
-    public static void convertWaveToXMW(String fileName) {
-        File wmxDir = new File("staging/xmw/").getAbsoluteFile();
-        Path wmxPath = new File(wmxDir, fileName + ".xmw").toPath();
 
-        File wavDir = new File("staging/wav/").getAbsoluteFile();
-        Path wavePath = new File(wavDir, fileName + ".wav").toPath();
-        // Path to the xWMAEncode executable - assuming it's in the current working directory
-        String encoderPath = new File("bin/xWMAEncode.exe").getAbsolutePath();
+    public static void convertMP3ToWAV(String fileName) {
+        LogHelper.performance("Starting MP3 to WAV conversion for: " + fileName);
+        String ffmpegExecutablePath = new File("bin/ffmpeg").getAbsolutePath();
+        Path mp3FilePath = Paths.get("staging/mp3/", fileName + ".mp3");
+        Path wavePath = Paths.get("staging/wav/", fileName + ".wav");
 
-        // Define the path to the temp folder inside the working directory
-
-        // Ensure the temp directory exists
-        if (!wmxDir.exists() && !wmxDir.mkdirs()) {
-            System.out.println("Could not create temp directory.");
+        if (Files.exists(wavePath)) {
+            LogHelper.grayInfo("WAV file already exists, skipping conversion for: " + fileName);
             return;
         }
 
-        if(!wmxPath.toFile().exists()) {
-            LogHelper.grayInfo("CONVERTING TO XMW");
-            // Construct the full path for the input WAV file in the temp directory
-            File inputWaveFile = wavePath.toFile();
-            // Check if the input file exists
-            if (!inputWaveFile.exists()) {
-                System.out.println("The input WAV file does not exist: " + inputWaveFile.getAbsolutePath());
-                return;
-            }
+        createDirectoryIfNotExists(wavePath.getParent().toString());
 
-            // Generate the output file path in the temp directory
-
-            String outputFilePath = wmxPath.toString();
-
-            // Construct the command
-            String[] command = {encoderPath, inputWaveFile.getAbsolutePath(), outputFilePath};
-
-            try {
-                // Execute the command
-                Process process = new ProcessBuilder(command).start();
-
-                // Wait for the process to complete
-                int exitCode = process.waitFor();
-
-                // Check if the command was executed successfully
-                if (exitCode == 0) {
-                } else {
-                    System.out.println("Conversion failed with exit code " + exitCode);
-                }
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            }
+        if (!Files.exists(mp3FilePath)) {
+            LogHelper.error("MP3 file does not exist: " + mp3FilePath);
+            return;
         }
+
+        executeProcess(new String[]{ffmpegExecutablePath, "-i", mp3FilePath.toString(), "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "1", wavePath.toString()}, "Convert MP3 to WAV");
+    }
+
+    public static void convertWaveToXMW(String fileName) {
+        LogHelper.performance("Starting WAV to XWM conversion for: " + fileName);
+        Path wmxPath = Paths.get("staging/xwm/", fileName + ".xwm");
+        Path wavePath = Paths.get("staging/wav/", fileName + ".wav");
+        String encoderPath = new File("bin/xWMAEncode.exe").getAbsolutePath();
+
+        if (Files.exists(wmxPath)) {
+            LogHelper.grayInfo("XWM file already exists, skipping conversion for: " + fileName);
+            return;
+        }
+
+        createDirectoryIfNotExists(wmxPath.getParent().toString());
+
+        if (!Files.exists(wavePath)) {
+            LogHelper.error("WAV file does not exist: " + wavePath);
+            return;
+        }
+
+        executeProcess(new String[]{encoderPath, wavePath.toString(), wmxPath.toString()}, "Convert WAV to XWM");
     }
 
     public static void convertXwmAndLipToFuz(String fileName) {
-        File fuzDir = new File("staging/fuz/").getAbsoluteFile();
-        Path fuzPath = new File(fuzDir, fileName + ".fuz").toPath();
+        LogHelper.performance("Starting XWM and LIP to FUZ conversion for: " + fileName);
+        Path fuzPath = Paths.get("staging/fuz/", fileName + ".fuz");
+        Path xwmPath = Paths.get("staging/xwm/", fileName + ".xwm");
+        Path lipPath = Paths.get("staging/lip/", fileName + ".lip");
+        String encoderPath = new File("bin/BmlFuzEncode.exe").getAbsolutePath();
 
-        File wmxDir = new File("staging/xmw/").getAbsoluteFile();
-        Path xmwPath = new File(wmxDir, fileName + ".xmw").toPath();
-        File lipDir = new File("staging/lip/").getAbsoluteFile();
-        Path lipPath = new File(lipDir, fileName + ".lip").toPath();
-
-        // Path to the BmlFuzEncode executable - assuming it's in the current working directory
-        String encoderPath = new File("./bin/BmlFuzEncode.exe").getAbsolutePath(); // Relative path to the encoder
-
-        // Define the path to the temp folder inside the working directory
-
-        // Ensure the temp directory exists
-        if (!fuzDir.exists() && !fuzDir.mkdirs()) {
-            System.out.println("Could not create temp directory.");
+        if (Files.exists(fuzPath)) {
+            LogHelper.grayInfo("FUZ file already exists, skipping conversion for: " + fileName);
             return;
         }
 
-        if(!fuzPath.toFile().exists()) {
-            LogHelper.grayInfo("CONVERTING TO FUZ");
-            // Construct the full paths for the xwm and lip files in the temp directory
+        createDirectoryIfNotExists(fuzPath.getParent().toString());
 
-            // Check if the input files exist
-            if (!xmwPath.toFile().exists() || !lipPath.toFile().exists()) {
-                System.out.println("One or more input files do not exist in the temp directory.");
-                return;
-            }
-
-            // Generate the output file name and path in the temp directory
-
-            // Construct the command
-            ProcessBuilder processBuilder;
-            if(ConfigManager.getSetting().getPackGenerateLip().equals("true")) {
-                processBuilder = new ProcessBuilder(encoderPath, fuzPath.toString(), xmwPath.toString(), lipPath.toString());
-            }else{
-                processBuilder = new ProcessBuilder(encoderPath, fuzPath.toString(), xmwPath.toString(), "-nolip");
-            }
-            processBuilder.redirectErrorStream(true); // Redirect error stream to the output stream
-
-            try {
-                // Execute the command
-                Process process = processBuilder.start();
-
-                // Wait for the process to complete
-                int exitCode = process.waitFor();
-
-                // Check if the command was executed successfully
-                if (exitCode == 0) {
-                } else {
-                    System.err.println("Conversion failed with exit code " + exitCode);
-                }
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            }
+        if (!Files.exists(xwmPath) || (!Files.exists(lipPath) && ConfigManager.getSetting().getPackGenerateLip().equals("true"))) {
+            LogHelper.error("One or more input files do not exist for FUZ conversion: " + fileName);
+            return;
         }
+
+        String[] command = ConfigManager.getSetting().getPackGenerateLip().equals("true") ?
+                new String[]{encoderPath, fuzPath.toString(), xwmPath.toString(), lipPath.toString()} :
+                new String[]{encoderPath, fuzPath.toString(), xwmPath.toString(), "-nolip"};
+
+        executeProcess(command, "Convert XWM and LIP to FUZ");
     }
 
+    private static void executeProcess(String[] command, String operationDescription) {
+        LogHelper.debug("Executing process: " + String.join(" ", command));
+        long startTime = System.currentTimeMillis();
+        try {
+            Process process = new ProcessBuilder(command).start();
+            int exitCode = process.waitFor();
+            long endTime = System.currentTimeMillis();
+            LogHelper.performance(operationDescription + " took " + (endTime - startTime) + "ms");
+            if (exitCode != 0) {
+                LogHelper.error(operationDescription + " failed with exit code: " + exitCode);
+            } else {
+                LogHelper.grayInfo(operationDescription + " completed successfully for: " + command[command.length - 1]);
+            }
+        } catch (IOException | InterruptedException e) {
+            LogHelper.error(operationDescription + " encountered an error: " + e.getMessage());
+        }
+    }
 }

@@ -1,14 +1,10 @@
 package com.absolutephoenix.dbvopackbuilder;
 
 import com.absolutephoenix.dbvopackbuilder.ui.MainWindow;
-import com.absolutephoenix.dbvopackbuilder.ui.SplashScreen;
 import com.github.weisj.darklaf.LafManager;
 import com.github.weisj.darklaf.theme.*;
 
 import java.io.*;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.EnumSet;
 
 public class DBVOPackBuilder {
 
@@ -16,6 +12,7 @@ public class DBVOPackBuilder {
         LafManager.setTheme(new OneDarkTheme());
         LafManager.install();
         if(!new File("topics").exists())
+            //noinspection ResultOfMethodCallIgnored
             new File("topics").mkdirs();
         new MainWindow();
     }

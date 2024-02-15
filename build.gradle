@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.absolutephoenix.dbvopackbuilder"
-version = "0.1.0"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -13,9 +13,10 @@ repositories {
 
 dependencies {
     implementation("com.github.weisj:darklaf-core:3.0.2")
-    implementation("net.andrewcpu:elevenlabs-api:2.7.2")
+    implementation("net.andrewcpu:elevenlabs-api:2.7.8")
     implementation 'com.fasterxml.jackson:jackson-bom:2.16.0-rc1'
     implementation 'com.github.kokorin.jaffree:jaffree:2023.09.10'
+    implementation 'commons-net:commons-net:3.9.0'
 
 }
 
@@ -51,8 +52,8 @@ launch4j {
     outfile = 'DBVOPackBuilder.exe'
     jar = shadowJar.archivePath
 
-//    bundledJrePath = "bin/jre"
-//    bundledJre64Bit = true
+    //bundledJrePath = "bin/jre"
+    //bundledJre64Bit = true
 
     // For additional configuration options, see the Launch4j and plugin documentation
     // Example: icon, vm options, application version, etc.

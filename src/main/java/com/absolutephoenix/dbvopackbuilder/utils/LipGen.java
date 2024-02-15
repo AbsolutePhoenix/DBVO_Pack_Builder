@@ -9,84 +9,77 @@ import java.nio.file.Paths;
 
 public class LipGen {
     public static void generate(String fileName, String sentence) {
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        // Define the path to the temp folder inside the working directory
-        File lipDir = new File("staging/lip/").getAbsoluteFile();
-        Path lipPath = new File(lipDir, fileName + ".lip").toPath();
-
-        File resampleDir = new File("staging/resample/").getAbsoluteFile();
-        Path resamplePath = new File(resampleDir, fileName + ".wav").toPath();
-
-        File wavDir = new File("staging/wav/").getAbsoluteFile();
-        Path wavePath = new File(wavDir, fileName + ".wav").toPath();
+        LogHelper.debug("Starting lip file generation for: " + fileName);
+        Path lipPath = Paths.get("staging/lip", fileName + ".lip");
+        Path resamplePath = Paths.get("staging/resample", fileName + ".wav");
+        Path wavePath = Paths.get("staging/wav", fileName + ".wav");
 
         if (!lipPath.toFile().exists()) {
-            LogHelper.grayInfo("GENERATING LIP DATA");
-
-            // Ensure the temp directory exists
-            if (!lipDir.exists()) {
-                lipDir.mkdirs();
-                return;
-            }
-            if (!resampleDir.exists()) {
-                resampleDir.mkdirs();
-                return;
-            }
-            // Assuming the wavFileName includes the .wav extension
-            // Construct the file path for the existing WAV file in the temp directory
-            String wavFilePath = wavePath.toString();
-
-            // Generate the name for the LIP file based on the WAV file
-            String lipFilePath = lipPath.toString();
-            String resampledWavPath = resamplePath.toString();
-
-            String faceFxWrapperPath = new File("bin/FaceFXWrapper.exe").getAbsolutePath();
-            String game = "skyrim";
-            String language = "USEnglish";
-            String fonixDataPath = new File("bin/FonixData.cdf").getAbsolutePath(); // Assuming this is in the current directory
-
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                    faceFxWrapperPath,
-                    game,
-                    language,
-                    fonixDataPath,
-                    wavFilePath,
-                    resampledWavPath,
-                    lipFilePath,
-                    sentence.replace("\"", "")
-            );
+            LogHelper.grayInfo("Generating lip data for " + sentence);
+            ensureDirectoryExists(lipPath.getParent());
+            ensureDirectoryExists(resamplePath.getParent());
 
             try {
-                Process process = processBuilder.start();
+                Thread.sleep(10);
+                LogHelper.debug("Waited 10ms for external tool synchronization");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LogHelper.error("Interrupted while waiting: " + e.getMessage());
+                throw new RuntimeException("Interrupted while waiting for external tool", e);
+            }
 
-                // Capture standard output
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        System.out.println(line);
-                    }
-                }
+            String faceFxWrapperPath = new File("bin/FaceFXWrapper.exe").getAbsolutePath();
+            String[] command = {
+                    faceFxWrapperPath,
+                    "skyrim",
+                    "USEnglish",
+                    new File("bin/FonixData.cdf").getAbsolutePath(),
+                    wavePath.toString(),
+                    resamplePath.toString(),
+                    lipPath.toString(),
+                    sentence.replace("\"", "")
+            };
 
-                // Capture standard error
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        System.err.println(line);
-                    }
-                }
+            LogHelper.debug("Running external process: " + String.join(" ", command));
+            runProcess(new ProcessBuilder(command));
+        } else {
+            LogHelper.debug("Lip file already exists, skipping generation for: " + fileName);
+        }
+        LogHelper.debug("Completed lip file generation for: " + fileName);
+    }
 
-                int exitCode = process.waitFor();
+    private static void ensureDirectoryExists(Path dir) {
+        if (!dir.toFile().exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            dir.toFile().mkdirs();
+        }
+    }
 
-                if (exitCode == 0) {
-                } else {
-                    System.out.println("LIP file generation failed with exit code: " + exitCode);
-                }
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+    private static void runProcess(ProcessBuilder processBuilder) {
+        try {
+            Process process = processBuilder.start();
+            handleProcessOutput(process);
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                System.out.println("LIP file generation failed with exit code: " + exitCode);
+            }
+        } catch (IOException | InterruptedException e) {
+            //noinspection CallToPrintStackTrace
+            e.printStackTrace();
+        }
+    }
+
+    private static void handleProcessOutput(Process process) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.err.println(line);
             }
         }
     }

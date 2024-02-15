@@ -4,10 +4,8 @@ import com.absolutephoenix.dbvopackbuilder.config.ConfigManager;
 import com.absolutephoenix.dbvopackbuilder.reference.GlobalVariables;
 import com.absolutephoenix.dbvopackbuilder.ui.MainWindow;
 import com.absolutephoenix.dbvopackbuilder.utils.LogHelper;
-import com.github.kokorin.jaffree.ffprobe.Log;
 import net.andrewcpu.elevenlabs.ElevenLabs;
 import net.andrewcpu.elevenlabs.model.response.GenerationTypeModel;
-import net.andrewcpu.elevenlabs.model.user.Subscription;
 import net.andrewcpu.elevenlabs.model.voice.Voice;
 
 import javax.swing.*;
@@ -26,6 +24,7 @@ import java.util.Objects;
  * pack building, and FOMOD creation for the DBVO Pack Builder application.
  * It provides a graphical interface for the user to input and save their preferences.
  */
+@SuppressWarnings({"FieldMayBeFinal", "unused", "ExtractMethodRecommender"})
 public class SettingsPanel extends JPanel implements ComponentListener {
 
     // ElevenLabs settings components
@@ -161,7 +160,7 @@ public class SettingsPanel extends JPanel implements ComponentListener {
                 elevenlabsStyle.setEnabled(true);
                 elevenlabsStyle.setValue(ConfigManager.getSetting().getElevenLabsStyle());
             }
-            elevenlabsStabilityLabel.setText("Voice Stabilit: " + elevenlabsStability.getValue());
+            elevenlabsStabilityLabel.setText("Voice Stability: " + elevenlabsStability.getValue());
             elevenlabsClarityLabel.setText("Voice Clarity: " + elevenlabsClarity.getValue());
             elevenlabsStyleLabel.setText("Voice Emotion (Experimental): " + elevenlabsStyle.getValue());
 
@@ -242,6 +241,7 @@ public class SettingsPanel extends JPanel implements ComponentListener {
      * version, and Nexus page URL, and applies previously saved settings to each field.
      * It also provides a save button for persisting any changes made.
      */
+    @SuppressWarnings("CommentedOutCode")
     public void fomodSetup() {
         // Set the panel layout and define the border with a title.
         fomodPanel.setLayout(new GridBagLayout());
@@ -255,7 +255,8 @@ public class SettingsPanel extends JPanel implements ComponentListener {
         gbc.anchor = GridBagConstraints.WEST; // Align components to the left side.
         gbc.insets = new Insets(5, 5, 5, 5); // Set padding around components.
 
-        // Add the mod name label and text field to the panel.
+
+//        Add the mod name label and text field to the panel.
 //        fomodModName.setEnabled(false);
 //        fomodPanel.add(fomodModNameLabel, gbc);
 //        fomodPanel.add(fomodModName, gbc);
@@ -307,12 +308,12 @@ public class SettingsPanel extends JPanel implements ComponentListener {
         elevenlabsSave.addActionListener(e -> {
             ConfigManager.getSetting().setElevenLabsAPIKey(new String(elevenLabsAPIField.getPassword()));
             try {
-                ConfigManager.getSetting().setElevenLabsVoice(elevenLabsVoice.getSelectedItem().toString());
+                ConfigManager.getSetting().setElevenLabsVoice(Objects.requireNonNull(elevenLabsVoice.getSelectedItem()).toString());
             }catch (NullPointerException a){
                 ConfigManager.getSetting().setElevenLabsVoice("");
             }
             try {
-                ConfigManager.getSetting().setElevenLabsVoiceModel(elevenLabsVoiceModel.getSelectedItem().toString());
+                ConfigManager.getSetting().setElevenLabsVoiceModel(Objects.requireNonNull(elevenLabsVoiceModel.getSelectedItem()).toString());
             }catch (NullPointerException a){
                 ConfigManager.getSetting().setElevenLabsVoiceModel("");
             }
@@ -352,12 +353,12 @@ public class SettingsPanel extends JPanel implements ComponentListener {
                     if (ElevenLabs.getUserAPI().getSubscription().getTier() != null) {
                         GlobalVariables.subscription = ElevenLabs.getUserAPI().getSubscription();
 
-                        List<String> voices = new ArrayList<String>();
+                        List<String> voices = new ArrayList<>();
                         for (Voice voice : ElevenLabs.getVoiceAPI().getVoices()) {
                             voices.add(voice.getName());
                         }
 
-                        List<String> models = new ArrayList<String>();
+                        List<String> models = new ArrayList<>();
                         for (GenerationTypeModel model : ElevenLabs.getModelsAPI().getAvailableModels()) {
                             models.add(model.getName());
                         }
@@ -427,17 +428,11 @@ public class SettingsPanel extends JPanel implements ComponentListener {
             LogHelper.info("FOMOD Settings have been saved.");
 
         });
-        elevenlabsStability.addChangeListener(e -> {
-            elevenlabsStabilityLabel.setText("Voice Stability: " + elevenlabsStability.getValue());
-        });
+        elevenlabsStability.addChangeListener(e -> elevenlabsStabilityLabel.setText("Voice Stability: " + elevenlabsStability.getValue()));
 
-        elevenlabsClarity.addChangeListener(e -> {
-            elevenlabsClarityLabel.setText("Voice Stability: " + elevenlabsClarity.getValue());
-        });
+        elevenlabsClarity.addChangeListener(e -> elevenlabsClarityLabel.setText("Voice Stability: " + elevenlabsClarity.getValue()));
 
-        elevenlabsStyle.addChangeListener(e -> {
-            elevenlabsStyleLabel.setText("Voice Emotion (Experimental): " + elevenlabsStyle.getValue());
-        });
+        elevenlabsStyle.addChangeListener(e -> elevenlabsStyleLabel.setText("Voice Emotion (Experimental): " + elevenlabsStyle.getValue()));
 
     }
 

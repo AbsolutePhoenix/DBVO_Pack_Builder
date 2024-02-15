@@ -7,7 +7,6 @@ import com.absolutephoenix.dbvopackbuilder.ui.panels.SettingsPanel;
 import com.absolutephoenix.dbvopackbuilder.utils.LogHelper;
 import com.github.weisj.darklaf.LafManager;
 import com.github.weisj.darklaf.theme.*;
-import com.sun.tools.javac.Main;
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
@@ -20,11 +19,11 @@ import java.awt.event.ComponentListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.invoke.SwitchPoint;
 import java.util.Objects;
 
+@SuppressWarnings({"NullableProblems", "RedundantThrows"})
 public class MainWindow extends JFrame implements ComponentListener {
-    private JTextPane consolePane = new JTextPane();
+    private final JTextPane consolePane = new JTextPane();
     private StyledDocument consoleDoc;
 
     public static MainWindow instance = null;
@@ -75,6 +74,7 @@ public class MainWindow extends JFrame implements ComponentListener {
         LogHelper.notice("DBVO Pack Maker Version: 0.1.0");
         LogHelper.notice("Make sure your settings are right before continuing,");
         LogHelper.notice("Character counts are an approximation before parsing. Actual count will most likely be lower.");
+        //redirectSystemStreams();
         packGeneratorPanel.loadTableData();
 
     }
@@ -136,6 +136,7 @@ public class MainWindow extends JFrame implements ComponentListener {
             try {
                 consoleDoc.insertString(consoleDoc.getLength(), text, style);
             } catch (BadLocationException e) {
+                //noinspection CallToPrintStackTrace
                 e.printStackTrace();
             }
         });
@@ -168,24 +169,16 @@ public class MainWindow extends JFrame implements ComponentListener {
     }
 
     private JMenuItem getThemeMenuItem(String theme) {
-        switch (theme) {
-            case "IntelliJTheme":
-                return IntelliJTheme;
-            case "SolarizedLightTheme":
-                return SolarizedLightTheme;
-            case "HighContrastLightTheme":
-                return HighContrastLightTheme;
-            case "DarculaTheme":
-                return DarculaTheme;
-            case "SolarizedDarkTheme":
-                return SolarizedDarkTheme;
-            case "HighContrastDarkTheme":
-                return HighContrastDarkTheme;
-            case "OneDarkTheme":
-                return OneDarkTheme;
-            default:
-                return null;
-        }
+        return switch (theme) {
+            case "IntelliJTheme" -> IntelliJTheme;
+            case "SolarizedLightTheme" -> SolarizedLightTheme;
+            case "HighContrastLightTheme" -> HighContrastLightTheme;
+            case "DarculaTheme" -> DarculaTheme;
+            case "SolarizedDarkTheme" -> SolarizedDarkTheme;
+            case "HighContrastDarkTheme" -> HighContrastDarkTheme;
+            case "OneDarkTheme" -> OneDarkTheme;
+            default -> null;
+        };
     }
 
     private void applyTheme(String theme) {
@@ -216,7 +209,7 @@ public class MainWindow extends JFrame implements ComponentListener {
     }
 
     private void showSplashScreen() {
-        splashScreen = new SplashScreen(10); // Duration is just a placeholder
+        splashScreen = new SplashScreen();
         splashScreen.setVisible(true);
     }
 

@@ -9,10 +9,11 @@ import java.util.Properties;
 /**
  * Singleton class that manages application configuration settings by loading from and saving to a properties file.
  */
+@SuppressWarnings({"CallToPrintStackTrace", "ResultOfMethodCallIgnored"})
 public class ConfigManager {
     private static ConfigManager ProgramSettings;
-    private Properties properties;
-    private String configFilePath;
+    private final Properties properties;
+    private final String configFilePath;
     private final static String configFolder = "config";
     private final static String configFileName = "settings.properties";
 

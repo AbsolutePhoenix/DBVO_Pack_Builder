@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
  * This class is designed to find the installation directory of Skyrim Special Edition
  * by looking through the Steam library folders.
  */
+@SuppressWarnings("ALL")
 public class FindSkyrimSEDirectory {
 
     /**
@@ -85,6 +86,7 @@ public class FindSkyrimSEDirectory {
                 }
             }
         } catch (Exception e) {
+            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
         System.out.println("Skyrim Special Edition Data folder not found in any Steam library.");

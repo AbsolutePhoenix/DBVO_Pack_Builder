@@ -12,6 +12,7 @@ import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
@@ -26,8 +27,11 @@ import java.util.Vector;
 public class PackGeneratorPanel extends JPanel implements ComponentListener {
 
     public JButton loadTopicFile = new JButton("Load Topic Files");
-    public JButton removeButton = new JButton("Remove Selected Row");
+    public JButton removeButton = new JButton("Remove Selected");
     public JButton generateButton = new JButton("Build Pack");
+
+    public JButton browseOnline = new JButton("<html><center>Browse<br>Community Topics</center></html>");
+    public JButton contributeOnline = new JButton("<html><center>Contribute<br>Community Topics</center></html>");
 
     private DefaultTableModel tableModel;
     public JTable fileTable = new JTable();
@@ -38,6 +42,7 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
 
     public int totalCharacterCount = 0;
     public boolean isBuilding = false;
+
     public PackGeneratorPanel(){
         this.setLayout(null);
         this.addComponentListener(this);
@@ -45,6 +50,8 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
         add(removeButton);
         add(characterCountLabel);
         add(generateButton);
+        add(browseOnline);
+        add(contributeOnline);
         tableSetup();
         progressLabel.setBorder(BorderFactory.createBevelBorder(0));
         add(progressLabel);
@@ -52,12 +59,12 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
     }
 
     public void tableSetup(){
-        String[] columnNames = {"Characters", "Mod Name", "ESP Name", "Topic File"};
+
+        String[] columnNames = {"Characters", "Mod Name", "ESP Name", "Category", "Topic File"};
         tableModel = new DefaultTableModel(columnNames, 0){
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Assuming "Topic File" is the third column with index 2
-                return column != 3 && column != 0;
+                return column != 0 && column != 4;
             }
         };
         fileTable.setModel(tableModel);
@@ -65,8 +72,13 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
         fileTable.getColumnModel().getColumn(0).setPreferredWidth(75);
         fileTable.getColumnModel().getColumn(1).setPreferredWidth(150);
         fileTable.getColumnModel().getColumn(2).setPreferredWidth(150);
+        fileTable.getColumnModel().getColumn(3).setPreferredWidth(150);
+        fileTable.getColumnModel().getColumn(4).setPreferredWidth(1256 - 510 - 160 - 30);
 
-        fileTable.getColumnModel().getColumn(3).setPreferredWidth(1256 - 375 - 160 - 30);
+        String[] categories = {"Modders Resources", "Utilities", "Bug Fixes", "Patches", "Gameplay", "Immersion", "Skills and Leveling", "Combat", "Followers and Companions", "Creatures and Mounts", "Races and Classes", "NPCs", "Quests and Adventures", "Collectables", "Treasure Hunts", "Puzzles", "Crafting", "Items and Objects", "Player homes", "Weapons and Armour", "Guilds and Factions", "Miscellaneous"};
+        JComboBox<String> categoryComboBox = new JComboBox<>(categories);
+        TableColumn categoryColumn = fileTable.getColumnModel().getColumn(3); // Adjust the index as per your table structure
+        categoryColumn.setCellEditor(new DefaultCellEditor(categoryComboBox));
 
         scrollPane.setBorder(BorderFactory.createBevelBorder(0));
         scrollPane.setViewportView(fileTable);
@@ -87,10 +99,9 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
             if (option == JFileChooser.APPROVE_OPTION) {
                 File[] files = fileChooser.getSelectedFiles();
                 for (File file : files) {
-                    String fileContent = "";
+                    String fileContent;
                     int charCount = 0;
                     try {
-                        // Try to read the file with a different encoding if UTF-8 fails
                         try {
                             fileContent = Files.readString(file.toPath(), StandardCharsets.UTF_8);
                         } catch (MalformedInputException ex) {
@@ -105,11 +116,12 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
                                 "File Read Error",
                                 JOptionPane.ERROR_MESSAGE
                         );
+                        //noinspection CallToPrintStackTrace
                         ex.printStackTrace();
                     }
                     totalCharacterCount += charCount;
                     characterCountLabel.setText("Approx Chars: " + totalCharacterCount);
-                    tableModel.addRow(new Object[]{charCount, "", "Unused", file.getAbsolutePath()});
+                    tableModel.addRow(new Object[]{charCount, "", "", "Miscellaneous", file.getAbsolutePath()});
                     LogHelper.info(file.getName() + " has been added to the compile.");
                 }
                 saveTableData();
@@ -141,6 +153,11 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
                 JOptionPane.showMessageDialog(MainWindow.instance, "Please select at least one row to remove.");
             }
         });
+        browseOnline.addActionListener(e -> {
+            TopicBrowserPanel topicBrowserPanel = new TopicBrowserPanel(MainWindow.instance, this);
+            topicBrowserPanel.setVisible(true);
+        });
+
         generateButton.addActionListener(e -> {
             if(!isBuilding) {
                 DefaultTableModel model = (DefaultTableModel) fileTable.getModel();
@@ -148,7 +165,7 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
                 boolean canRun = true;
 
                 for (int x = 0; x < model.getRowCount(); x++) {
-                    if (((String) model.getValueAt(x, 1)).equals(""))
+                    if (((String) model.getValueAt(x, 1)).isEmpty())
                         canRun = false;
                 }
 
@@ -168,12 +185,12 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
                             String currentModName = (String) model.getValueAt(0, 1);
                             if(!isBuilding)
                                 break;
-                            List<String> ReadyToPocess = TopicHandler.initialTopicProcessing((String) model.getValueAt(0, 3), (String) model.getValueAt(0, 1));
-                            if (ReadyToPocess == null) {
-                                LogHelper.warn("Skipping: " + new File((String) model.getValueAt(0, 3)).getName() + " has lines that exceed the file path limits of Windows.");
+                            List<String> ReadyToProcess = TopicHandler.initialTopicProcessing((String) model.getValueAt(0, 4), (String) model.getValueAt(0, 1));
+                            if (ReadyToProcess == null) {
+                                LogHelper.warn("Skipping: " + new File((String) model.getValueAt(0, 4)).getName() + " has lines that exceed the file path limits of Windows.");
                             } else {
-                                List<String> voiceStrings = TopicHandler.getVoiceGenStrings(ReadyToPocess);
-                                List<String> fileStrings = TopicHandler.getFileNames(ReadyToPocess);
+                                List<String> voiceStrings = TopicHandler.getVoiceGenStrings(ReadyToProcess);
+                                List<String> fileStrings = TopicHandler.getFileNames(ReadyToProcess);
                                 Voice useableVoice = Voice.getVoice(ConfigManager.getSetting().getElevenLabsVoiceID(), true);
                                 LogHelper.notice("BEGINNING GENERATION OF: " + model.getValueAt(0, 1));
                                 if (voiceStrings.size() == fileStrings.size()) {
@@ -185,22 +202,27 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
                                     for (int x = 0; x < totalLinesInCurrentMod; x++) {
                                         if(!isBuilding)
                                             break;
-                                        ElevenLabsFileHandling.saveStreamAsMp3(useableVoice, stability, similarity, style, voiceStrings.get(x), fileStrings.get(x));
-                                        AudioManipulation.convertMP3ToWAV(fileStrings.get(x));
-                                        if(ConfigManager.getSetting().getPackGenerateLip().equals("true")) {
-                                            LipGen.generate(fileStrings.get(x), voiceStrings.get(x));
+                                        if(!ElevenLabsFileHandling.saveStreamAsMp3(useableVoice, stability, similarity, style, voiceStrings.get(x), fileStrings.get(x))){
+                                            isBuilding = false;
+                                            break;
+                                        }else {
+                                            AudioManipulation.convertMP3ToWAV(fileStrings.get(x));
+                                            if (ConfigManager.getSetting().getPackGenerateLip().equals("true")) {
+                                                LipGen.generate(fileStrings.get(x), voiceStrings.get(x));
+                                            }
+                                            AudioManipulation.convertWaveToXMW(fileStrings.get(x));
+                                            AudioManipulation.convertXwmAndLipToFuz(fileStrings.get(x));
+                                            try {
+                                                //noinspection BusyWait
+                                                Thread.sleep(10);
+                                            } catch (InterruptedException ex) {
+                                                throw new RuntimeException(ex);
+                                            }
+                                            PackBuild.copyFileToPackFolder(fileStrings.get(x), (String) model.getValueAt(0, 1));
+                                            int currentModProgress = (int) (((double) (x + 1) / totalLinesInCurrentMod) * 100);
+                                            int overallProgress = (int) (((double) modsProcessed / totalMods) * 100);
+                                            SwingUtilities.invokeLater(() -> progressLabel.setText("<html>&nbsp;&nbsp;Processing " + currentModName + ": " + currentModProgress + "% complete.<br>&nbsp;&nbsp;Overall: " + overallProgress + "% complete.</html>"));
                                         }
-                                        AudioManipulation.convertWaveToXMW(fileStrings.get(x));
-                                        AudioManipulation.convertXwmAndLipToFuz(fileStrings.get(x));
-                                        try {
-                                            Thread.sleep(10);
-                                        } catch (InterruptedException ex) {
-                                            throw new RuntimeException(ex);
-                                        }
-                                        PackBuild.copyFileToPackFolder(fileStrings.get(x), (String) model.getValueAt(0, 1));
-                                        int currentModProgress = (int) (((double) (x + 1) / totalLinesInCurrentMod) * 100);
-                                        int overallProgress = (int) (((double) modsProcessed / totalMods) * 100);
-                                        SwingUtilities.invokeLater(() -> progressLabel.setText("<html>&nbsp;&nbsp;Processing " + currentModName + ": " + currentModProgress + "% complete.<br>&nbsp;&nbsp;Overall: " + overallProgress + "% complete.</html>"));
                                     }
                                 } else {
                                     LogHelper.error("Unable to continue. Data was processed wrong. Please try again.");
@@ -220,6 +242,9 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
 
                         }
                         try {
+                            if(isBuilding){
+                                PackBuild.bsaPack("AIO");
+                            }
                             GlobalVariables.subscription = ElevenLabs.getUserAPI().getSubscription();
                             MainWindow.instance.setTitle("DBVO Pack Builder - " + GlobalVariables.subscription.getCharacterCount() + "/" + GlobalVariables.subscription.getCharacterLimit());
                         } catch (NullPointerException ignore) {
@@ -258,7 +283,7 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
             if (e.getType() == TableModelEvent.UPDATE) {
                 int column = e.getColumn();
 
-                if (column == 1 || column == 2) {
+                if (column == 1 || column == 2 || column == 3) {
                     saveTableData();
                 }
             }
@@ -273,17 +298,29 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
             LogHelper.error("Error saving table data: " + e.getMessage());
         }
     }
+    @SuppressWarnings("unchecked") // Suppress the unchecked warning
     public void loadTableData() {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("config/tableData.dbvo"))) {
             Vector<?> dataVector = (Vector<?>) ois.readObject();
             totalCharacterCount = 0; // Reset total character count
+
+            boolean needsConversion = !dataVector.isEmpty() && ((Vector<?>) dataVector.get(0)).size() == 4; // Check if conversion is needed
+
             for (Object row : dataVector) {
-                Vector<?> rowData = (Vector<?>) row;
+                Vector<Object> rowData = (Vector<Object>) row; // Cast to Vector<Object>
+                if (needsConversion) {
+                    // Insert a default value for the "Category" column at the correct position
+                    rowData.insertElementAt("Miscellaneous", 3); // Insert an empty string or a default value
+                }
                 tableModel.addRow(rowData);
-                // Assuming the character count is in the first column
                 totalCharacterCount += (int) rowData.get(0);
             }
             characterCountLabel.setText("Approx Chars: " + totalCharacterCount); // Update label
+
+            if (needsConversion) {
+                saveTableData(); // Save the data in the new format
+            }
+
             LogHelper.info("Table data loaded successfully.");
         } catch (FileNotFoundException e) {
             LogHelper.info("No saved table data found.");
@@ -291,27 +328,26 @@ public class PackGeneratorPanel extends JPanel implements ComponentListener {
             LogHelper.error("Error loading table data: " + e.getMessage());
         }
     }
+
     @Override
     public void componentResized(ComponentEvent e) {
         loadTopicFile.setBounds(10, 10, 140, 25);
         removeButton.setBounds(10, loadTopicFile.getY() + loadTopicFile.getHeight() + 20, 140, 25);
+        browseOnline.setBounds(10, removeButton.getY() + removeButton.getHeight() + 20, 140, 50);
+        contributeOnline.setBounds(10, browseOnline.getY() + browseOnline.getHeight() + 20, 140, 50);
+
         characterCountLabel.setBounds(10, getHeight() - 25 - 10, 140, 25);
         generateButton.setBounds(10, getHeight() - 25 - 10 - 25, 140, 25);
         scrollPane.setBounds(160, 10, getWidth() - 10 - 160, getHeight() - 60);
         progressLabel.setBounds(scrollPane.getX(), scrollPane.getY() + scrollPane.getHeight() + 5 , scrollPane.getWidth(), 40);
     }
 
-    @Override
     public void componentMoved(ComponentEvent e) {
 
     }
-
-    @Override
     public void componentShown(ComponentEvent e) {
 
     }
-
-    @Override
     public void componentHidden(ComponentEvent e) {
 
     }
